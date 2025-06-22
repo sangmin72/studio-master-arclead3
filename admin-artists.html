@@ -4,93 +4,308 @@
     <meta charset="UTF-8">
     <title>Admin - Manage Artists</title>
     <link rel="stylesheet" href="css/bootstrap.min.css">
-    <link rel="stylesheet" href="css/core-style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
     <style>
-        body {
-            background-color: #f8f9fa;
+        body { background-color: #f8f9fa; }
+        .container { max-width: 1200px; }
+        .artist-card { background: #fff; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.07); margin-bottom: 2rem; }
+        .artist-card .card-body { padding: 1.5rem; }
+        .img-thumbnail { width: 60px; height: 60px; object-fit: cover; margin-right: 10px; }
+        .portfolio-thumbnails .img-thumbnail { position: relative; }
+        .delete-photo-icon {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background: #dc3545;
+            color: white;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 12px;
         }
-        .admin-container {
-            max-width: 800px;
-            margin: 50px auto;
-            background: #fff;
-            padding: 30px;
-            border-radius: 8px;
-            box-shadow: 0 0 15px rgba(0,0,0,0.1);
-        }
-        .admin-container h2 {
-            margin-bottom: 30px;
-        }
+        .portfolio-thumbnails .img-thumbnail:hover .delete-photo-icon { display: flex; }
     </style>
 </head>
 <body>
 
-    <div class="admin-container">
-        <h2 class="text-center">배우 등록/관리</h2>
-        <form id="artist-form">
-            <div class="form-group">
-                <label for="name">배우 이름</label>
-                <input type="text" class="form-control" id="name" name="name" required>
-            </div>
-            <div class="form-group">
-                <label for="large_text">큰 글씨</label>
-                <input type="text" class="form-control" id="large_text" name="large_text" required>
-            </div>
-            <div class="form-group">
-                <label for="small_text">작은 글씨</label>
-                <input type="text" class="form-control" id="small_text" name="small_text" required>
-            </div>
-            <div class="form-group">
-                <label for="main_photo">메인 사진</label>
-                <input type="file" class="form-control-file" id="main_photo" name="main_photo" accept="image/*" required>
-            </div>
-            <div class="form-group">
-                <label for="portfolio_photos">포트폴리오 사진</label>
-                <input type="file" class="form-control-file" id="portfolio_photos" name="portfolio_photos" accept="image/*" multiple>
-            </div>
-            <button type="submit" class="btn studio-btn mt-3">저장하기</button>
-        </form>
+    <div class="container my-5">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1>등록된 아티스트</h1>
+            <button class="btn btn-primary" data-toggle="modal" data-target="#artistModal" id="add-new-artist-btn">
+                <i class="fas fa-plus"></i> 신규 아티스트 등록
+            </button>
+        </div>
+        <div id="artist-list" class="row">
+            <!-- Artist cards will be rendered here -->
+        </div>
     </div>
 
-    <script>
-    const artistForm = document.getElementById('artist-form');
-    const submitButton = artistForm.querySelector('button[type="submit"]');
+    <!-- Artist Modal (for Add/Edit) -->
+    <div class="modal fade" id="artistModal" tabindex="-1" role="dialog">
+        <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+                <form id="artist-form">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="modal-title">아티스트 정보</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <input type="hidden" id="actor-id" name="id">
+                        <div class="form-row">
+                            <div class="form-group col-md-6">
+                                <label>이름</label>
+                                <input type="text" class="form-control" name="name" required>
+                            </div>
+                            <div class="form-group col-md-6">
+                                <label>영문명</label>
+                                <input type="text" class="form-control" name="english_name">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>홈페이지 소개 문구 (큰 글씨)</label>
+                            <input type="text" class="form-control" name="large_text">
+                        </div>
+                        <div class="form-group">
+                            <label>메인 사진</label>
+                            <input type="file" class="form-control-file" name="main_photo" accept="image/*">
+                        </div>
+                        <div class="form-group">
+                            <label>포트폴리오 사진 추가</label>
+                            <input type="file" class="form-control-file" name="portfolio_photos" accept="image/*" multiple>
+                        </div>
+                         <div class="form-group" id="existing-photos-section" style="display:none;">
+                            <label>기존 포트폴리오 사진 (삭제하려면 클릭)</label>
+                            <div id="existing-photos-container" class="d-flex flex-wrap"></div>
+                        </div>
+                        <hr>
+                        <h6>작품 목록</h6>
+                        <div id="works-container">
+                            <!-- Dynamic works fields will be here -->
+                        </div>
+                        <button type="button" class="btn btn-sm btn-secondary" id="add-work-btn">작품 추가</button>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">닫기</button>
+                        <button type="submit" class="btn btn-primary">저장하기</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
 
-    artistForm.addEventListener('submit', function(e) {
-        e.preventDefault();
+<script src="js/jquery/jquery-2.2.4.min.js"></script>
+<script src="js/popper.min.js"></script>
+<script src="js/bootstrap.min.js"></script>
 
-        const formData = new FormData(this);
-        const originalButtonText = submitButton.innerHTML;
-        
-        submitButton.disabled = true;
-        submitButton.innerHTML = '저장 중...';
+<script>
+$(document).ready(function() {
+    const artistList = $('#artist-list');
+    const artistForm = $('#artist-form');
+    const modal = $('#artistModal');
+    let photosToDelete = [];
 
-        fetch('/api/admin/actors', {
-            method: 'POST',
-            body: formData
-        })
-        .then(response => {
-            if (!response.ok) {
-                return response.text().then(text => {
-                    throw new Error(text || `Server responded with ${response.status}`);
+    // Fetch and render artists
+    function loadArtists() {
+        $.getJSON('/api/admin/actors', function(actors) {
+            artistList.empty();
+            actors.forEach(actor => {
+                const worksHtml = actor.works && Object.entries(actor.works.reduce((acc, work) => {
+                    acc[work.category] = (acc[work.category] || []).concat(work);
+                    return acc;
+                }, {})).map(([category, items]) => `
+                    <h6>${category} (${items.length}편)</h6>
+                    <ul class="list-unstyled small">${items.map(i => `<li>${i.year}: ${i.title}</li>`).join('')}</ul>
+                `).join('');
+
+                const card = `
+                    <div class="col-md-6" data-id="${actor.id}">
+                        <div class="artist-card">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between">
+                                    <div>
+                                        <h4>${actor.name} <small class="text-muted">${actor.english_name || ''}</small></h4>
+                                        <p class="small text-muted mb-2">홈화면 작은글씨: ${actor.large_text || ''}</p>
+                                    </div>
+                                    <div>
+                                        <button class="btn btn-sm btn-outline-primary edit-btn">수정</button>
+                                        <button class="btn btn-sm btn-outline-danger delete-btn">삭제</button>
+                                    </div>
+                                </div>
+                                <h6>대표 이미지</h6>
+                                ${actor.main_photo ? `<img src="${actor.main_photo}" class="img-thumbnail">` : '<p class="small text-muted">없음</p>'}
+                                <h6 class="mt-3">전체 업로드 이미지 (${actor.photos ? actor.photos.length : 0}개)</h6>
+                                <div class="d-flex flex-wrap">
+                                    ${actor.photos && actor.photos.map(p => `<img src="${p}" class="img-thumbnail">`).join('')}
+                                </div>
+                                <div class="mt-3">${worksHtml}</div>
+                            </div>
+                        </div>
+                    </div>`;
+                artistList.append(card);
+            });
+        });
+    }
+
+    // Add new artist button
+    $('#add-new-artist-btn').on('click', function() {
+        artistForm[0].reset();
+        artistForm.find('[name="id"]').val('');
+        $('#modal-title').text('신규 아티스트 등록');
+        $('#works-container').empty();
+        $('#existing-photos-section').hide();
+        photosToDelete = [];
+    });
+
+    // Edit button on card
+    artistList.on('click', '.edit-btn', function() {
+        const id = $(this).closest('.col-md-6').data('id');
+        $.getJSON('/api/admin/actors', function(actors) {
+            const actor = actors.find(a => a.id === id);
+            if (!actor) return;
+            
+            artistForm[0].reset();
+            $('#modal-title').text('아티스트 정보 수정');
+            artistForm.find('[name="id"]').val(actor.id);
+            artistForm.find('[name="name"]').val(actor.name);
+            artistForm.find('[name="english_name"]').val(actor.english_name);
+            artistForm.find('[name="large_text"]').val(actor.large_text);
+            
+            // Works
+            const worksContainer = $('#works-container').empty();
+            (actor.works || []).forEach(work => addWorkField(work.category, work.year, work.title));
+
+            // Photos
+            photosToDelete = [];
+            const photoContainer = $('#existing-photos-container').empty();
+            if (actor.photos && actor.photos.length > 0) {
+                actor.photos.forEach(photoUrl => {
+                    const imgContainer = $(`
+                        <div class="img-thumbnail mr-2 mb-2" style="cursor: pointer;" data-url="${photoUrl}">
+                             <img src="${photoUrl}" style="width:100%; height:100%; object-fit: cover;">
+                             <div class="delete-photo-icon"><i class="fas fa-times"></i></div>
+                        </div>
+                    `);
+                    photoContainer.append(imgContainer);
                 });
+                $('#existing-photos-section').show();
+            } else {
+                 $('#existing-photos-section').hide();
             }
-            return response.json();
-        })
-        .then(result => {
-            alert('성공적으로 저장되었습니다.');
-            console.log('Saved actor:', result);
-            artistForm.reset(); // Clear the form for the next entry
-        })
-        .catch(error => {
-            alert('저장 중 오류가 발생했습니다. 자세한 내용은 콘솔을 확인해주세요.');
-            console.error('Error:', error);
-        })
-        .finally(() => {
-            submitButton.disabled = false;
-            submitButton.innerHTML = originalButtonText;
+
+            modal.modal('show');
         });
     });
-    </script>
 
+    // Handle clicking on an existing photo to mark for deletion
+    $('#existing-photos-container').on('click', '.img-thumbnail', function() {
+        const url = $(this).data('url');
+        const index = photosToDelete.indexOf(url);
+
+        if (index > -1) {
+            photosToDelete.splice(index, 1);
+            $(this).css('opacity', 1.0);
+        } else {
+            photosToDelete.push(url);
+            $(this).css('opacity', 0.5);
+        }
+    });
+
+    // Delete button on card
+    artistList.on('click', '.delete-btn', function() {
+        if (!confirm('정말 이 아티스트를 삭제하시겠습니까? 모든 사진도 함께 삭제됩니다.')) return;
+        const card = $(this).closest('.col-md-6');
+        const id = card.data('id');
+
+        $.ajax({
+            url: `/api/admin/actors/${id}`,
+            type: 'DELETE',
+            success: function() {
+                alert('삭제되었습니다.');
+                card.remove();
+            },
+            error: function() {
+                alert('삭제 중 오류가 발생했습니다.');
+            }
+        });
+    });
+    
+    // Dynamic works fields
+    function addWorkField(category = '', year = '', title = '') {
+        const workField = $(`
+            <div class="form-row align-items-end work-item mb-2">
+                <div class="col">
+                    <input type="text" class="form-control form-control-sm" placeholder="분류 (예: 영화)" value="${category}">
+                </div>
+                <div class="col">
+                    <input type="text" class="form-control form-control-sm" placeholder="연도" value="${year}">
+                </div>
+                <div class="col-5">
+                    <input type="text" class="form-control form-control-sm" placeholder="작품명" value="${title}">
+                </div>
+                <div class="col-auto">
+                    <button type="button" class="btn btn-sm btn-danger remove-work-btn"><i class="fas fa-trash"></i></button>
+                </div>
+            </div>`);
+        $('#works-container').append(workField);
+    }
+
+    $('#add-work-btn').on('click', () => addWorkField());
+    $('#works-container').on('click', '.remove-work-btn', function() {
+        $(this).closest('.work-item').remove();
+    });
+
+    // Form submission
+    artistForm.on('submit', function(e) {
+        e.preventDefault();
+        const id = $(this).find('[name="id"]').val();
+        const url = id ? `/api/admin/actors/${id}` : '/api/admin/actors';
+        const method = id ? 'PUT' : 'POST';
+
+        const formData = new FormData(this);
+        
+        // Collect works data
+        const works = [];
+        $('.work-item').each(function() {
+            const category = $(this).find('input').eq(0).val();
+            const year = $(this).find('input').eq(1).val();
+            const title = $(this).find('input').eq(2).val();
+            if (category && title) {
+                works.push({ category, year, title });
+            }
+        });
+        formData.append('works', JSON.stringify(works));
+        
+        // Add photos to delete if we are editing
+        if(id) {
+            formData.append('photos_to_delete', JSON.stringify(photosToDelete));
+        }
+
+        $.ajax({
+            url: url,
+            type: method,
+            data: formData,
+            processData: false,
+            contentType: false,
+            success: function() {
+                alert('저장되었습니다.');
+                modal.modal('hide');
+                loadArtists();
+            },
+            error: function() {
+                alert('저장 중 오류가 발생했습니다.');
+            }
+        });
+    });
+
+    // Initial load
+    loadArtists();
+});
+</script>
 </body>
 </html> 
