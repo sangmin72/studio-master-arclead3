@@ -52,26 +52,42 @@
     </div>
 
     <script>
-    document.getElementById('artist-form').addEventListener('submit', function(e) {
+    const artistForm = document.getElementById('artist-form');
+    const submitButton = artistForm.querySelector('button[type="submit"]');
+
+    artistForm.addEventListener('submit', function(e) {
         e.preventDefault();
 
         const formData = new FormData(this);
+        const originalButtonText = submitButton.innerHTML;
+        
+        submitButton.disabled = true;
+        submitButton.innerHTML = '저장 중...';
 
-        // Note: The backend logic in _worker.js is a placeholder.
-        // You will need to implement the file upload and data saving logic
-        // using Cloudflare R2.
         fetch('/api/admin/actors', {
             method: 'POST',
             body: formData
         })
-        .then(response => response.text())
+        .then(response => {
+            if (!response.ok) {
+                return response.text().then(text => {
+                    throw new Error(text || `Server responded with ${response.status}`);
+                });
+            }
+            return response.json();
+        })
         .then(result => {
-            alert('전송 완료! (현재 백엔드는 R2 저장 로직 구현 필요)');
-            console.log(result);
+            alert('성공적으로 저장되었습니다.');
+            console.log('Saved actor:', result);
+            artistForm.reset(); // Clear the form for the next entry
         })
         .catch(error => {
-            alert('오류 발생');
+            alert('저장 중 오류가 발생했습니다. 자세한 내용은 콘솔을 확인해주세요.');
             console.error('Error:', error);
+        })
+        .finally(() => {
+            submitButton.disabled = false;
+            submitButton.innerHTML = originalButtonText;
         });
     });
     </script>
